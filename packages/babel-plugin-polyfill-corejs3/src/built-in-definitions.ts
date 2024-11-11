@@ -29,7 +29,8 @@ const define = (
   };
 };
 
-const typed = (name: string) => define(null, [name, ...TypedArrayDependencies]);
+const typed = (...modules) =>
+  define(null, [...modules, ...TypedArrayDependencies]);
 
 const ArrayNatureIterators = [
   "es.array.iterator",
@@ -46,6 +47,21 @@ const ArrayNatureIteratorsWithTag = [
 const CommonIteratorsWithTag = ["es.object.to-string", ...CommonIterators];
 
 const ErrorDependencies = ["es.error.cause", "es.error.to-string"];
+
+const SuppressedErrorDependencies = [
+  "esnext.suppressed-error.constructor",
+  ...ErrorDependencies,
+];
+
+const ArrayBufferDependencies = [
+  "es.array-buffer.constructor",
+  "es.array-buffer.slice",
+  "es.data-view",
+  "es.array-buffer.detached",
+  "es.array-buffer.transfer",
+  "es.array-buffer.transfer-to-fixed-length",
+  "es.object.to-string",
+];
 
 const TypedArrayDependencies = [
   "es.typed-array.at",
@@ -73,17 +89,17 @@ const TypedArrayDependencies = [
   "es.typed-array.sort",
   "es.typed-array.subarray",
   "es.typed-array.to-locale-string",
+  "es.typed-array.to-reversed",
+  "es.typed-array.to-sorted",
   "es.typed-array.to-string",
+  "es.typed-array.with",
   "es.object.to-string",
   "es.array.iterator",
-  "es.array-buffer.slice",
   "esnext.typed-array.filter-reject",
   "esnext.typed-array.group-by",
-  "esnext.typed-array.to-reversed",
-  "esnext.typed-array.to-sorted",
   "esnext.typed-array.to-spliced",
   "esnext.typed-array.unique-by",
-  "esnext.typed-array.with",
+  ...ArrayBufferDependencies,
 ];
 
 export const PromiseDependencies = ["es.promise", "es.object.to-string"];
@@ -107,6 +123,8 @@ const MapDependencies = [
   "esnext.map.filter",
   "esnext.map.find",
   "esnext.map.find-key",
+  "esnext.map.get-or-insert",
+  "esnext.map.get-or-insert-computed",
   "esnext.map.includes",
   "esnext.map.key-of",
   "esnext.map.map-keys",
@@ -120,6 +138,13 @@ const MapDependencies = [
 
 const SetDependencies = [
   "es.set",
+  "es.set.difference.v2",
+  "es.set.intersection.v2",
+  "es.set.is-disjoint-from.v2",
+  "es.set.is-subset-of.v2",
+  "es.set.is-superset-of.v2",
+  "es.set.symmetric-difference.v2",
+  "es.set.union.v2",
   "esnext.set.add-all",
   "esnext.set.delete-all",
   "esnext.set.difference",
@@ -143,6 +168,8 @@ const WeakMapDependencies = [
   "es.weak-map",
   "esnext.weak-map.delete-all",
   "esnext.weak-map.emplace",
+  "esnext.weak-map.get-or-insert",
+  "esnext.weak-map.get-or-insert-computed",
   ...CommonIteratorsWithTag,
 ];
 
@@ -162,6 +189,9 @@ const DOMExceptionDependencies = [
 
 const URLSearchParamsDependencies = [
   "web.url-search-params",
+  "web.url-search-params.delete",
+  "web.url-search-params.has",
+  "web.url-search-params.size",
   ...CommonIteratorsWithTag,
 ];
 
@@ -181,21 +211,35 @@ const AsyncIteratorProblemMethods = [
   "esnext.async-iterator.some",
 ];
 
-const IteratorDependencies = [
-  "esnext.iterator.constructor",
-  "es.object.to-string",
+const IteratorDependencies = ["es.iterator.constructor", "es.object.to-string"];
+
+export const DecoratorMetadataDependencies = [
+  "esnext.symbol.metadata",
+  "esnext.function.metadata",
 ];
 
-const TypedArrayStaticMethods = {
-  from: define(null, ["es.typed-array.from"]),
+const TypedArrayStaticMethods = (base: string) => ({
+  from: define(null, ["es.typed-array.from", base, ...TypedArrayDependencies]),
   fromAsync: define(null, [
     "esnext.typed-array.from-async",
+    base,
     ...PromiseDependenciesWithIterators,
+    ...TypedArrayDependencies,
   ]),
-  of: define(null, ["es.typed-array.of"]),
-};
+  of: define(null, ["es.typed-array.of", base, ...TypedArrayDependencies]),
+});
+
+const DataViewDependencies = ["es.data-view", ...ArrayBufferDependencies];
 
 export const BuiltIns: ObjectMap<CoreJSPolyfillDescriptor> = {
+  AsyncDisposableStack: define("async-disposable-stack/index", [
+    "esnext.async-disposable-stack.constructor",
+    "es.object.to-string",
+    "esnext.async-iterator.async-dispose",
+    "esnext.iterator.dispose",
+    ...PromiseDependencies,
+    ...SuppressedErrorDependencies,
+  ]),
   AsyncIterator: define("async-iterator/index", AsyncIteratorDependencies),
   AggregateError: define("aggregate-error", [
     "es.aggregate-error",
@@ -203,18 +247,16 @@ export const BuiltIns: ObjectMap<CoreJSPolyfillDescriptor> = {
     ...CommonIteratorsWithTag,
     "es.aggregate-error.cause",
   ]),
-  ArrayBuffer: define(null, [
-    "es.array-buffer.constructor",
-    "es.array-buffer.slice",
-    "es.object.to-string",
-  ]),
-  DataView: define(null, [
-    "es.data-view",
-    "es.array-buffer.slice",
-    "es.object.to-string",
-  ]),
+  ArrayBuffer: define(null, ArrayBufferDependencies),
+  DataView: define(null, DataViewDependencies),
   Date: define(null, ["es.date.to-string"]),
-  DOMException: define("dom-exception", DOMExceptionDependencies),
+  DOMException: define("dom-exception/index", DOMExceptionDependencies),
+  DisposableStack: define("disposable-stack/index", [
+    "esnext.disposable-stack.constructor",
+    "es.object.to-string",
+    "esnext.iterator.dispose",
+    ...SuppressedErrorDependencies,
+  ]),
   Error: define(null, ErrorDependencies),
   EvalError: define(null, ErrorDependencies),
   Float32Array: typed("es.typed-array.float32-array"),
@@ -223,7 +265,13 @@ export const BuiltIns: ObjectMap<CoreJSPolyfillDescriptor> = {
   Int16Array: typed("es.typed-array.int16-array"),
   Int32Array: typed("es.typed-array.int32-array"),
   Iterator: define("iterator/index", IteratorDependencies),
-  Uint8Array: typed("es.typed-array.uint8-array"),
+  Uint8Array: typed(
+    "es.typed-array.uint8-array",
+    "esnext.uint8-array.set-from-base64",
+    "esnext.uint8-array.set-from-hex",
+    "esnext.uint8-array.to-base64",
+    "esnext.uint8-array.to-hex",
+  ),
   Uint8ClampedArray: typed("es.typed-array.uint8-clamped-array"),
   Uint16Array: typed("es.typed-array.uint16-array"),
   Uint32Array: typed("es.typed-array.uint32-array"),
@@ -247,11 +295,16 @@ export const BuiltIns: ObjectMap<CoreJSPolyfillDescriptor> = {
     "es.regexp.to-string",
   ]),
   Set: define("set/index", SetDependencies),
+  SuppressedError: define("suppressed-error", SuppressedErrorDependencies),
   Symbol: define("symbol/index", SymbolDependencies),
   SyntaxError: define(null, ErrorDependencies),
   TypeError: define(null, ErrorDependencies),
   URIError: define(null, ErrorDependencies),
-  URL: define("url/index", ["web.url", ...URLSearchParamsDependencies]),
+  URL: define("url/index", [
+    "web.url",
+    "web.url.to-json",
+    ...URLSearchParamsDependencies,
+  ]),
   URLSearchParams: define(
     "url-search-params/index",
     URLSearchParamsDependencies,
@@ -270,6 +323,7 @@ export const BuiltIns: ObjectMap<CoreJSPolyfillDescriptor> = {
   parseFloat: define("parse-float", ["es.parse-float"]),
   parseInt: define("parse-int", ["es.parse-int"]),
   queueMicrotask: define("queue-microtask", ["web.queue-microtask"]),
+  self: define("self", ["web.self"]),
   setImmediate: define("set-immediate", ["web.immediate"]),
   setInterval: define("set-interval", ["web.timers"]),
   setTimeout: define("set-timeout", ["web.timers"]),
@@ -330,15 +384,36 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
   },
 
   Iterator: {
-    from: define("iterator/from", [
-      "esnext.iterator.from",
+    concat: define("iterator/concat", [
+      "esnext.iterator.concat",
       ...IteratorDependencies,
       ...CommonIterators,
+    ]),
+    from: define("iterator/from", [
+      "es.iterator.from",
+      ...IteratorDependencies,
+      ...CommonIterators,
+    ]),
+    range: define("iterator/range", [
+      "esnext.iterator.range",
+      ...IteratorDependencies,
+      "es.object.to-string",
     ]),
   },
 
   JSON: {
-    stringify: define("json/stringify", ["es.json.stringify"], "es.symbol"),
+    isRawJSON: define("json/is-raw-json", ["esnext.json.is-raw-json"]),
+    parse: define("json/parse", ["esnext.json.parse", "es.object.keys"]),
+    rawJSON: define("json/raw-json", [
+      "esnext.json.raw-json",
+      "es.object.create",
+      "es.object.freeze",
+    ]),
+    stringify: define(
+      "json/stringify",
+      ["es.json.stringify", "es.date.to-json"],
+      "es.symbol",
+    ),
   },
 
   Math: {
@@ -354,6 +429,7 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
     degrees: define("math/degrees", ["esnext.math.degrees"]),
     expm1: define("math/expm1", ["es.math.expm1"]),
     fround: define("math/fround", ["es.math.fround"]),
+    f16round: define("math/f16round", ["esnext.math.f16round"]),
     fscale: define("math/fscale", ["esnext.math.fscale"]),
     hypot: define("math/hypot", ["es.math.hypot"]),
     iaddh: define("math/iaddh", ["esnext.math.iaddh"]),
@@ -369,16 +445,20 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
     sign: define("math/sign", ["es.math.sign"]),
     signbit: define("math/signbit", ["esnext.math.signbit"]),
     sinh: define("math/sinh", ["es.math.sinh"]),
+    sumPrecise: define("math/sum-precise", [
+      "esnext.math.sum-precise",
+      "es.array.iterator",
+    ]),
     tanh: define("math/tanh", ["es.math.tanh"]),
     trunc: define("math/trunc", ["es.math.trunc"]),
     umulh: define("math/umulh", ["esnext.math.umulh"]),
   },
 
   Map: {
-    from: define(null, ["esnext.map.from", ...MapDependencies]),
-    groupBy: define(null, ["esnext.map.group-by", ...MapDependencies]),
-    keyBy: define(null, ["esnext.map.key-by", ...MapDependencies]),
-    of: define(null, ["esnext.map.of", ...MapDependencies]),
+    from: define("map/from", ["esnext.map.from", ...MapDependencies]),
+    groupBy: define("map/group-by", ["es.map.group-by", ...MapDependencies]),
+    keyBy: define("map/key-by", ["esnext.map.key-by", ...MapDependencies]),
+    of: define("map/of", ["esnext.map.of", ...MapDependencies]),
   },
 
   Number: {
@@ -434,6 +514,10 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
     getPrototypeOf: define("object/get-prototype-of", [
       "es.object.get-prototype-of",
     ]),
+    groupBy: define("object/group-by", [
+      "es.object.group-by",
+      "es.object.create",
+    ]),
     hasOwn: define("object/has-own", ["es.object.has-own"]),
     is: define("object/is", ["es.object.is"]),
     isExtensible: define("object/is-extensible", ["es.object.is-extensible"]),
@@ -452,19 +536,20 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
 
   Promise: {
     all: define(null, PromiseDependenciesWithIterators),
-    allSettled: define(null, [
+    allSettled: define("promise/all-settled", [
       "es.promise.all-settled",
       ...PromiseDependenciesWithIterators,
     ]),
-    any: define(null, [
+    any: define("promise/any", [
       "es.promise.any",
       "es.aggregate-error",
       ...PromiseDependenciesWithIterators,
     ]),
     race: define(null, PromiseDependenciesWithIterators),
-    try: define(null, [
-      "esnext.promise.try",
-      ...PromiseDependenciesWithIterators,
+    try: define("promise/try", ["es.promise.try", ...PromiseDependencies]),
+    withResolvers: define("promise/with-resolvers", [
+      "es.promise.with-resolvers",
+      ...PromiseDependencies,
     ]),
   },
 
@@ -521,13 +606,22 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
     ]),
   },
 
+  RegExp: {
+    escape: define("regexp/escape", ["esnext.regexp.escape"]),
+  },
+
   Set: {
-    from: define(null, ["esnext.set.from", ...SetDependencies]),
-    of: define(null, ["esnext.set.of", ...SetDependencies]),
+    from: define("set/from", ["esnext.set.from", ...SetDependencies]),
+    of: define("set/of", ["esnext.set.of", ...SetDependencies]),
   },
 
   String: {
     cooked: define("string/cooked", ["esnext.string.cooked"]),
+    dedent: define("string/dedent", [
+      "esnext.string.dedent",
+      "es.string.from-code-point",
+      "es.weak-map",
+    ]),
     fromCodePoint: define("string/from-code-point", [
       "es.string.from-code-point",
     ]),
@@ -537,11 +631,18 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
   Symbol: {
     asyncDispose: define("symbol/async-dispose", [
       "esnext.symbol.async-dispose",
+      "esnext.async-iterator.async-dispose",
     ]),
     asyncIterator: define("symbol/async-iterator", [
       "es.symbol.async-iterator",
     ]),
-    dispose: define("symbol/dispose", ["esnext.symbol.dispose"]),
+    customMatcher: define("symbol/custom-matcher", [
+      "esnext.symbol.custom-matcher",
+    ]),
+    dispose: define("symbol/dispose", [
+      "esnext.symbol.dispose",
+      "esnext.iterator.dispose",
+    ]),
     for: define("symbol/for", [], "es.symbol"),
     hasInstance: define("symbol/has-instance", [
       "es.symbol.has-instance",
@@ -550,6 +651,22 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
     isConcatSpreadable: define("symbol/is-concat-spreadable", [
       "es.symbol.is-concat-spreadable",
       "es.array.concat",
+    ]),
+    isRegistered: define("symbol/is-registered", [
+      "esnext.symbol.is-registered",
+      "es.symbol",
+    ]),
+    isRegisteredSymbol: define("symbol/is-registered-symbol", [
+      "esnext.symbol.is-registered-symbol",
+      "es.symbol",
+    ]),
+    isWellKnown: define("symbol/is-well-known", [
+      "esnext.symbol.is-well-known",
+      "es.symbol",
+    ]),
+    isWellKnownSymbol: define("symbol/is-well-known-symbol", [
+      "esnext.symbol.is-well-known-symbol",
+      "es.symbol",
     ]),
     iterator: define("symbol/iterator", [
       "es.symbol.iterator",
@@ -562,7 +679,7 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
       "es.symbol.match-all",
       "es.string.match-all",
     ]),
-    metadata: define("symbol/metadata", ["esnext.symbol.metadata"]),
+    metadata: define("symbol/metadata", DecoratorMetadataDependencies),
     metadataKey: define("symbol/metadata-key", ["esnext.symbol.metadata-key"]),
     observable: define("symbol/observable", ["esnext.symbol.observable"]),
     patternMatch: define("symbol/pattern-match", [
@@ -591,25 +708,48 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
     unscopables: define("symbol/unscopables", ["es.symbol.unscopables"]),
   },
 
+  URL: {
+    canParse: define("url/can-parse", ["web.url.can-parse", "web.url"]),
+    parse: define("url/parse", ["web.url.parse", "web.url"]),
+  },
+
   WeakMap: {
-    from: define(null, ["esnext.weak-map.from", ...WeakMapDependencies]),
-    of: define(null, ["esnext.weak-map.of", ...WeakMapDependencies]),
+    from: define("weak-map/from", [
+      "esnext.weak-map.from",
+      ...WeakMapDependencies,
+    ]),
+    of: define("weak-map/of", ["esnext.weak-map.of", ...WeakMapDependencies]),
   },
 
   WeakSet: {
-    from: define(null, ["esnext.weak-set.from", ...WeakSetDependencies]),
-    of: define(null, ["esnext.weak-set.of", ...WeakSetDependencies]),
+    from: define("weak-set/from", [
+      "esnext.weak-set.from",
+      ...WeakSetDependencies,
+    ]),
+    of: define("weak-set/of", ["esnext.weak-set.of", ...WeakSetDependencies]),
   },
 
-  Int8Array: TypedArrayStaticMethods,
-  Uint8Array: TypedArrayStaticMethods,
-  Uint8ClampedArray: TypedArrayStaticMethods,
-  Int16Array: TypedArrayStaticMethods,
-  Uint16Array: TypedArrayStaticMethods,
-  Int32Array: TypedArrayStaticMethods,
-  Uint32Array: TypedArrayStaticMethods,
-  Float32Array: TypedArrayStaticMethods,
-  Float64Array: TypedArrayStaticMethods,
+  Int8Array: TypedArrayStaticMethods("es.typed-array.int8-array"),
+  Uint8Array: {
+    fromBase64: define(null, [
+      "esnext.uint8-array.from-base64",
+      ...TypedArrayDependencies,
+    ]),
+    fromHex: define(null, [
+      "esnext.uint8-array.from-hex",
+      ...TypedArrayDependencies,
+    ]),
+    ...TypedArrayStaticMethods("es.typed-array.uint8-array"),
+  },
+  Uint8ClampedArray: TypedArrayStaticMethods(
+    "es.typed-array.uint8-clamped-array",
+  ),
+  Int16Array: TypedArrayStaticMethods("es.typed-array.int16-array"),
+  Uint16Array: TypedArrayStaticMethods("es.typed-array.uint16-array"),
+  Int32Array: TypedArrayStaticMethods("es.typed-array.int32-array"),
+  Uint32Array: TypedArrayStaticMethods("es.typed-array.uint32-array"),
+  Float32Array: TypedArrayStaticMethods("es.typed-array.float32-array"),
+  Float64Array: TypedArrayStaticMethods("es.typed-array.float64-array"),
 
   WebAssembly: {
     CompileError: define(null, ErrorDependencies),
@@ -619,7 +759,7 @@ export const StaticProperties: ObjectMap2<CoreJSPolyfillDescriptor> = {
 };
 
 export const InstanceProperties = {
-  asIndexedPairs: define("instance/asIndexedPairs", [
+  asIndexedPairs: define(null, [
     "esnext.async-iterator.as-indexed-pairs",
     ...AsyncIteratorDependencies,
     "esnext.iterator.as-indexed-pairs",
@@ -645,46 +785,43 @@ export const InstanceProperties = {
   codePoints: define("instance/code-points", ["esnext.string.code-points"]),
   concat: define("instance/concat", ["es.array.concat"], undefined, ["String"]),
   copyWithin: define("instance/copy-within", ["es.array.copy-within"]),
+  demethodize: define("instance/demethodize", ["esnext.function.demethodize"]),
   description: define(null, ["es.symbol", "es.symbol.description"]),
-  dotAll: define("instance/dot-all", ["es.regexp.dot-all"]),
-  drop: define("instance/drop", [
+  dotAll: define(null, ["es.regexp.dot-all"]),
+  drop: define(null, [
+    "es.iterator.drop",
+    ...IteratorDependencies,
     "esnext.async-iterator.drop",
     ...AsyncIteratorDependencies,
-    "esnext.iterator.drop",
-    ...IteratorDependencies,
-  ]),
-  emplace: define("instance/emplace", [
-    "esnext.map.emplace",
-    "esnext.weak-map.emplace",
   ]),
   endsWith: define("instance/ends-with", ["es.string.ends-with"]),
   entries: define("instance/entries", ArrayNatureIteratorsWithTag),
   every: define("instance/every", [
     "es.array.every",
-    "esnext.async-iterator.every",
+    "es.iterator.every",
+    ...IteratorDependencies,
     // TODO: add async iterator dependencies when we support sub-dependencies
     // esnext.async-iterator.every depends on es.promise
     // but we don't want to pull es.promise when esnext.async-iterator is disabled
     //
+    // "esnext.async-iterator.every",
     // ...AsyncIteratorDependencies
-    "esnext.iterator.every",
-    ...IteratorDependencies,
   ]),
   exec: define(null, ["es.regexp.exec"]),
   fill: define("instance/fill", ["es.array.fill"]),
   filter: define("instance/filter", [
     "es.array.filter",
-    "esnext.async-iterator.filter",
-    "esnext.iterator.filter",
+    "es.iterator.filter",
     ...IteratorDependencies,
+    // "esnext.async-iterator.filter",
   ]),
   filterReject: define("instance/filterReject", ["esnext.array.filter-reject"]),
   finally: define(null, ["es.promise.finally", ...PromiseDependencies]),
   find: define("instance/find", [
     "es.array.find",
-    "esnext.async-iterator.find",
-    "esnext.iterator.find",
+    "es.iterator.find",
     ...IteratorDependencies,
+    // "esnext.async-iterator.find",
   ]),
   findIndex: define("instance/find-index", ["es.array.find-index"]),
   findLast: define("instance/find-last", ["es.array.find-last"]),
@@ -696,11 +833,19 @@ export const InstanceProperties = {
   flatMap: define("instance/flat-map", [
     "es.array.flat-map",
     "es.array.unscopables.flat-map",
-    "esnext.async-iterator.flat-map",
-    "esnext.iterator.flat-map",
+    "es.iterator.flat-map",
     ...IteratorDependencies,
+    // "esnext.async-iterator.flat-map",
   ]),
   flat: define("instance/flat", ["es.array.flat", "es.array.unscopables.flat"]),
+  getFloat16: define(null, [
+    "esnext.data-view.get-float16",
+    ...DataViewDependencies,
+  ]),
+  getUint8Clamped: define(null, [
+    "esnext.data-view.get-uint8-clamped",
+    ...DataViewDependencies,
+  ]),
   getYear: define(null, ["es.date.get-year"]),
   group: define("instance/group", ["esnext.array.group"]),
   groupBy: define("instance/group-by", ["esnext.array.group-by"]),
@@ -718,22 +863,23 @@ export const InstanceProperties = {
   fontsize: define(null, ["es.string.fontsize"]),
   forEach: define("instance/for-each", [
     "es.array.for-each",
-    "esnext.async-iterator.for-each",
-    "esnext.iterator.for-each",
+    "es.iterator.for-each",
     ...IteratorDependencies,
+    // "esnext.async-iterator.for-each",
     "web.dom-collections.for-each",
   ]),
   includes: define("instance/includes", [
     "es.array.includes",
     "es.string.includes",
   ]),
-  indexed: define("instance/indexed", [
+  indexed: define(null, [
     "esnext.async-iterator.indexed",
     ...AsyncIteratorDependencies,
     "esnext.iterator.indexed",
     ...IteratorDependencies,
   ]),
   indexOf: define("instance/index-of", ["es.array.index-of"]),
+  isWellFormed: define("instance/is-well-formed", ["es.string.is-well-formed"]),
   italic: define(null, ["es.string.italics"]),
   join: define(null, ["es.array.join"]),
   keys: define("instance/keys", ArrayNatureIteratorsWithTag),
@@ -743,8 +889,9 @@ export const InstanceProperties = {
   link: define(null, ["es.string.link"]),
   map: define("instance/map", [
     "es.array.map",
-    "esnext.async-iterator.map",
-    "esnext.iterator.map",
+    "es.iterator.map",
+    ...IteratorDependencies,
+    // "esnext.async-iterator.map",
   ]),
   match: define(null, ["es.string.match", "es.regexp.exec"]),
   matchAll: define("instance/match-all", [
@@ -757,9 +904,9 @@ export const InstanceProperties = {
   push: define("instance/push", ["es.array.push"]),
   reduce: define("instance/reduce", [
     "es.array.reduce",
-    "esnext.async-iterator.reduce",
-    "esnext.iterator.reduce",
+    "es.iterator.reduce",
     ...IteratorDependencies,
+    // "esnext.async-iterator.reduce",
   ]),
   reduceRight: define("instance/reduce-right", ["es.array.reduce-right"]),
   repeat: define("instance/repeat", ["es.string.repeat"]),
@@ -771,36 +918,44 @@ export const InstanceProperties = {
   ]),
   reverse: define("instance/reverse", ["es.array.reverse"]),
   search: define(null, ["es.string.search", "es.regexp.exec"]),
+  setFloat16: define(null, [
+    "esnext.data-view.set-float16",
+    ...DataViewDependencies,
+  ]),
+  setUint8Clamped: define(null, [
+    "esnext.data-view.set-uint8-clamped",
+    ...DataViewDependencies,
+  ]),
   setYear: define(null, ["es.date.set-year"]),
   slice: define("instance/slice", ["es.array.slice"]),
   small: define(null, ["es.string.small"]),
   some: define("instance/some", [
     "es.array.some",
-    "esnext.async-iterator.some",
-    "esnext.iterator.some",
+    "es.iterator.some",
     ...IteratorDependencies,
+    // "esnext.async-iterator.some",
   ]),
   sort: define("instance/sort", ["es.array.sort"]),
   splice: define("instance/splice", ["es.array.splice"]),
   split: define(null, ["es.string.split", "es.regexp.exec"]),
   startsWith: define("instance/starts-with", ["es.string.starts-with"]),
-  sticky: define("instance/sticky", ["es.regexp.sticky"]),
+  sticky: define(null, ["es.regexp.sticky"]),
   strike: define(null, ["es.string.strike"]),
   sub: define(null, ["es.string.sub"]),
   substr: define(null, ["es.string.substr"]),
   sup: define(null, ["es.string.sup"]),
-  take: define("instance/take", [
+  take: define(null, [
+    "es.iterator.take",
+    ...IteratorDependencies,
     "esnext.async-iterator.take",
     ...AsyncIteratorDependencies,
-    "esnext.iterator.take",
-    ...IteratorDependencies,
   ]),
   test: define(null, ["es.regexp.test", "es.regexp.exec"]),
-  toArray: define("instance/to-array", [
+  toArray: define(null, [
+    "es.iterator.to-array",
+    ...IteratorDependencies,
     "esnext.async-iterator.to-array",
     ...AsyncIteratorDependencies,
-    "esnext.iterator.to-array",
-    ...IteratorDependencies,
   ]),
   toAsync: define(null, [
     "esnext.iterator.to-async",
@@ -812,20 +967,21 @@ export const InstanceProperties = {
   toFixed: define(null, ["es.number.to-fixed"]),
   toGMTString: define(null, ["es.date.to-gmt-string"]),
   toISOString: define(null, ["es.date.to-iso-string"]),
-  toJSON: define(null, ["es.date.to-json", "web.url.to-json"]),
+  toJSON: define(null, ["es.date.to-json"]),
   toPrecision: define(null, ["es.number.to-precision"]),
-  toReversed: define("instance/to-reversed", ["esnext.array.to-reversed"]),
+  toReversed: define("instance/to-reversed", ["es.array.to-reversed"]),
   toSorted: define("instance/to-sorted", [
-    "esnext.array.to-sorted",
+    "es.array.to-sorted",
     "es.array.sort",
   ]),
-  toSpliced: define("instance/to-spliced", ["esnext.array.to-spliced"]),
+  toSpliced: define("instance/to-spliced", ["es.array.to-spliced"]),
   toString: define(null, [
     "es.object.to-string",
     "es.error.to-string",
     "es.date.to-string",
     "es.regexp.to-string",
   ]),
+  toWellFormed: define("instance/to-well-formed", ["es.string.to-well-formed"]),
   trim: define("instance/trim", ["es.string.trim"]),
   trimEnd: define("instance/trim-end", ["es.string.trim-end"]),
   trimLeft: define("instance/trim-left", ["es.string.trim-start"]),
@@ -835,19 +991,10 @@ export const InstanceProperties = {
   unshift: define("instance/unshift", ["es.array.unshift"]),
   unThis: define("instance/un-this", ["esnext.function.un-this"]),
   values: define("instance/values", ArrayNatureIteratorsWithTag),
-  with: define("instance/with", ["esnext.array.with"]),
+  with: define("instance/with", ["es.array.with"]),
   __defineGetter__: define(null, ["es.object.define-getter"]),
   __defineSetter__: define(null, ["es.object.define-setter"]),
   __lookupGetter__: define(null, ["es.object.lookup-getter"]),
   __lookupSetter__: define(null, ["es.object.lookup-setter"]),
   ["__proto__"]: define(null, ["es.object.proto"]),
 };
-
-export const CommonInstanceDependencies = new Set<string>([
-  "es.object.to-string",
-  "es.object.define-getter",
-  "es.object.define-setter",
-  "es.object.lookup-getter",
-  "es.object.lookup-setter",
-  "es.regexp.exec",
-]);

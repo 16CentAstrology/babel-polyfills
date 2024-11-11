@@ -1,5 +1,7 @@
 "use strict";
 
+const MISSING = "@@MISSING@@";
+
 module.exports = {
   globalThis: "globalThis",
   parseInt: "Miscellaneous / parseInt ignores leading zeros",
@@ -38,13 +40,19 @@ module.exports = {
   "Array.prototype.reduceRight": "Array methods / Array.prototype.reduceRight",
   "Array.prototype.some": "Array methods / Array.prototype.some",
   "Array.prototype.splice": "Array.prototype methods / Array.prototype.splice",
-  //"Array.prototype.toReversed": MISSING,
-  //"Array.prototype.toSpliced": MISSING,
-  //"Array.prototype.toSorted": MISSING,
+  "Array.prototype.toReversed": MISSING,
+  "Array.prototype.toSorted": MISSING,
+  "Array.prototype.toSpliced": MISSING,
   "Array.prototype.unshift": "Array methods / Array.prototype.unshift",
   "Array.prototype.values": "Array.prototype methods / Array.prototype.values",
-  //"Array.prototype.with": MISSING,
-  //"Date": MISSING,
+  "Array.prototype.with": MISSING,
+  "ArrayBuffer.prototype.detached": MISSING,
+  "ArrayBuffer.prototype.transfer":
+    "ArrayBuffer.prototype.transfer / ArrayBuffer.prototype.transfer()",
+  "ArrayBuffer.prototype.transferToFixedLength": MISSING,
+  AsyncDisposableStack: MISSING,
+  // Commented out to avoid polyfilling in every environment until when we have data
+  //Date: MISSING,
   //"Date.prototype.getFullYear": MISSING,
   //"Date.prototype.getMonth": MISSING,
   //"Date.prototype.getDate": MISSING,
@@ -58,6 +66,7 @@ module.exports = {
   "Date.prototype.toJSON": "Date methods / Date.prototype.toJSON",
   "Date.now": "Date methods / Date.now",
   //"Date.parse": MISSING,
+  DisposableStack: MISSING,
   "Error cause": "Error.cause property",
   "Function.prototype.name": {
     features: [
@@ -65,6 +74,31 @@ module.exports = {
       'function "name" property / function expressions',
     ],
   },
+  Iterator: {
+    features: [
+      "Iterator Helpers / instanceof Iterator",
+      "Iterator Helpers / extends Iterator",
+    ],
+  },
+  "Iterator.from": {
+    features: [
+      "Iterator Helpers / Iterator.from, iterable",
+      "Iterator Helpers / Iterator.from, iterator",
+    ],
+  },
+  "Iterator.prototype.constructor": MISSING,
+  "Iterator.prototype.drop": "Iterator Helpers / Iterator.prototype.drop",
+  "Iterator.prototype.every": "Iterator Helpers / Iterator.prototype.every",
+  "Iterator.prototype.filter": "Iterator Helpers / Iterator.prototype.filter",
+  "Iterator.prototype.find": "Iterator Helpers / Iterator.prototype.find",
+  "Iterator.prototype.flatMap": "Iterator Helpers / Iterator.prototype.flatMap",
+  "Iterator.prototype.forEach": "Iterator Helpers / Iterator.prototype.forEach",
+  "Iterator.prototype.map": "Iterator Helpers / Iterator.prototype.map",
+  "Iterator.prototype.reduce": "Iterator Helpers / Iterator.prototype.reduce",
+  "Iterator.prototype.some": "Iterator Helpers / Iterator.prototype.some",
+  "Iterator.prototype.take": "Iterator Helpers / Iterator.prototype.take",
+  "Iterator.prototype.toArray": "Iterator Helpers / Iterator.prototype.toArray",
+  Map: "Map /", // Trailing / to exclude Map.prototype.upsert
   "Math.acosh": "Math methods / Math.acosh",
   "Math.atanh": "Math methods / Math.atanh",
   "Math.clz32": "Math methods / Math.clz32",
@@ -99,12 +133,22 @@ module.exports = {
   "Promise.allSettled": "Promise.allSettled",
   "Promise.any": "Promise.any",
   "Promise.try": [],
+  "Promise.withResolvers": MISSING,
   "Promise.prototype.finally": "Promise.prototype.finally",
   "Reflect.apply": "Reflect / Reflect.apply",
   "Reflect.getPrototypeOf": "Reflect / Reflect.getPrototypeOf",
   "Reflect.ownKeys": "Reflect / Reflect.ownKeys",
   "RegExp.prototype.flags":
     "RegExp.prototype properties / RegExp.prototype.flags",
+  Set: "Set /", // Trailing / to exclude "Set methods"
+  "Set.prototype.difference": "Set methods / Set.prototype.difference",
+  "Set.prototype.intersection": "Set methods / Set.prototype.intersection",
+  "Set.prototype.isDisjointFrom": "Set methods / Set.prototype.isDisjointFrom",
+  "Set.prototype.isSubsetOf": "Set methods / Set.prototype.isSubsetOf",
+  "Set.prototype.isSupersetOf": "Set methods / Set.prototype.isSupersetOf",
+  "Set.prototype.symmetricDifference":
+    "Set methods / Set.prototype.symmetricDifference",
+  "Set.prototype.union": "Set methods / Set.prototype.union",
   "String.fromCodePoint": "String static methods / String.fromCodePoint",
   "String.raw": "String static methods / String.raw",
   "String.prototype.codePointAt":
@@ -113,6 +157,7 @@ module.exports = {
     "String.prototype methods / String.prototype.endsWith",
   "String.prototype.includes":
     "String.prototype methods / String.prototype.includes",
+  "String.prototype.isWellFormed": MISSING,
   "String.prototype.at": "`.item` method / String.prototype.item",
   "String.prototype.matchAll": "String.prototype.matchAll",
   "String.prototype.padEnd": "String padding / String.prototype.padEnd",
@@ -126,12 +171,16 @@ module.exports = {
     "String.prototype methods / String.prototype.startsWith",
   "String.prototype.substr":
     "String properties and methods / String.prototype.substr",
+  "String.prototype.toWellFormed": MISSING,
   "String.prototype.trim":
     "String properties and methods / String.prototype.trim",
   "String.prototype.trimEnd": "string trimming / String.prototype.trimEnd",
   "String.prototype.trimLeft": "string trimming / String.prototype.trimLeft",
   "String.prototype.trimRight": "string trimming / String.prototype.trimRight",
   "String.prototype.trimStart": "string trimming / String.prototype.trimStart",
+  SuppressedError: MISSING,
+  "Symbol.asyncDispose": MISSING,
+  "Symbol.dispose": MISSING,
   "Symbol.prototype.description": "Symbol.prototype.description",
 
   // Annex B

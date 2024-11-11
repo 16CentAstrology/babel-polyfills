@@ -12,17 +12,20 @@ import defineProvider from "@babel/helper-define-polyfill-provider";
 import type { NodePath } from "@babel/traverse";
 import { types as t } from "@babel/core";
 
+const BABEL_RUNTIME = "@babel/runtime-corejs2";
+
 const presetEnvCompat = "#__secret_key__@babel/preset-env__compatibility";
 const runtimeCompat = "#__secret_key__@babel/runtime__compatibility";
 
 const has = Function.call.bind(Object.hasOwnProperty);
 
 type Options = {
-  "#__secret_key__@babel/preset-env__compatibility": void | {
+  [presetEnvCompat]?: {
     entryInjectRegenerator: boolean;
+    noRuntimeName: boolean;
   };
-  "#__secret_key__@babel/runtime__compatibility": void | {
-    useBabelRuntime: string;
+  [runtimeCompat]?: {
+    useBabelRuntime: boolean;
     runtimeVersion: string;
     ext: string;
   };
@@ -31,13 +34,15 @@ type Options = {
 export default defineProvider<Options>(function (
   api,
   {
-    [presetEnvCompat]: { entryInjectRegenerator } = {
-      entryInjectRegenerator: false,
-    },
-    [runtimeCompat]: { useBabelRuntime, runtimeVersion, ext = ".js" } = {
-      useBabelRuntime: "",
-      runtimeVersion: "",
-    },
+    [presetEnvCompat]: {
+      entryInjectRegenerator = false,
+      noRuntimeName = false,
+    } = {},
+    [runtimeCompat]: {
+      useBabelRuntime = false,
+      runtimeVersion = "",
+      ext = ".js",
+    } = {},
   },
 ) {
   const resolve = api.createMetaResolver({
@@ -55,10 +60,10 @@ export default defineProvider<Options>(function (
   );
 
   const coreJSBase = useBabelRuntime
-    ? `${useBabelRuntime}/core-js`
+    ? `${BABEL_RUNTIME}/core-js`
     : method === "usage-pure"
-    ? "core-js/library/fn"
-    : "core-js/modules";
+      ? "core-js/library/fn"
+      : "core-js/modules";
 
   function inject(name: string | string[], utils) {
     if (typeof name === "string") {
@@ -75,7 +80,7 @@ export default defineProvider<Options>(function (
   }
 
   function maybeInjectPure(desc, hint, utils) {
-    const { pure, meta, name } = desc;
+    let { pure, meta, name } = desc;
 
     if (!pure || !shouldInjectPolyfill(name)) return;
 
@@ -88,11 +93,17 @@ export default defineProvider<Options>(function (
       return;
     }
 
+    // Unfortunately core-js and @babel/runtime-corejs2 don't have the same
+    // directory structure, so we need to special case this.
+    if (useBabelRuntime && pure === "symbol/index") pure = "symbol";
+
     return utils.injectDefaultImport(`${coreJSBase}/${pure}${ext}`, hint);
   }
 
   return {
     name: "corejs2",
+
+    runtimeName: noRuntimeName ? null : BABEL_RUNTIME,
 
     polyfills,
 
@@ -110,7 +121,7 @@ export default defineProvider<Options>(function (
       }
     },
 
-    usageGlobal(meta, utils) {
+    usageGlobal(meta, utils): undefined {
       const resolved = resolve(meta);
       if (!resolved) return;
 

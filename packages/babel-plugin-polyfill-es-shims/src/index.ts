@@ -37,7 +37,7 @@ export default defineProvider<{}>(function ({
       path: any,
     ) => void,
   ) {
-    return (meta: MetaDescriptor, utils: Utils, path: NodePath) => {
+    return (meta: MetaDescriptor, utils: Utils, path: NodePath): undefined => {
       if (path.parentPath.isUnaryExpression({ operator: "delete" })) return;
 
       const resolved = resolvePolyfill(meta);
@@ -161,8 +161,8 @@ export default defineProvider<{}>(function ({
               isGetter
                 ? expr`${id}(${t.cloneNode(tmp)})`
                 : isCall
-                ? id
-                : expr`${id}.getPolyfill()`,
+                  ? id
+                  : expr`${id}.getPolyfill()`,
               replacement,
             );
 

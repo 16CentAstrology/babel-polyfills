@@ -64,18 +64,34 @@ export type ProviderApi = {
 };
 
 export type Utils = {
-  injectGlobalImport(url: string): void;
-  injectNamedImport(url: string, name: string, hint?: string): t.Identifier;
-  injectDefaultImport(url: string, hint?: string): t.Identifier;
+  injectGlobalImport(url: string, moduleName?: string): void;
+  injectNamedImport(
+    url: string,
+    name: string,
+    hint?: string,
+    moduleName?: string,
+  ): t.Identifier;
+  injectDefaultImport(
+    url: string,
+    hint?: string,
+    moduleName?: string,
+  ): t.Identifier;
 };
+
+type ProviderMethod<ReturnType = void> = (
+  meta: MetaDescriptor,
+  utils: Utils,
+  path: NodePath,
+) => ReturnType;
 
 export type ProviderResult = {
   name: string;
+  runtimeName?: string;
   polyfills?: string[] | { [name: string]: Targets };
   filterPolyfills?: (name: string) => boolean;
-  entryGlobal?: (meta: MetaDescriptor, utils: Utils, path: NodePath) => void;
-  usageGlobal?: (meta: MetaDescriptor, utils: Utils, path: NodePath) => void;
-  usagePure?: (meta: MetaDescriptor, utils: Utils, path: NodePath) => void;
+  entryGlobal?: ProviderMethod;
+  usageGlobal?: ProviderMethod<undefined | boolean>;
+  usagePure?: ProviderMethod;
   visitor?: any;
   pre?: Function;
   post?: Function;

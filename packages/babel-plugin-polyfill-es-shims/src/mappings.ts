@@ -38,6 +38,7 @@ for (const [name, causeArgNum] of [
   ["SyntaxError", 2],
   ["TypeError", 2],
   ["URIError", 2],
+  // SuppressedError is not in this list because it does not have a cause
 ] as [string, number][]) {
   defineGlobal(name, "1.0.1", "error-cause", {
     exclude: lessThanArgs(causeArgNum),
@@ -53,11 +54,25 @@ const DATE_VERSION = "2.0.0";
 defineGlobal("globalThis", "1.0.0");
 defineGlobal("parseInt", "2.0.0");
 
+defineGlobal("Map", "1.0.4", "es-map");
+defineGlobal("Set", "1.1.0", "es-set");
+
+// TODO: Uncomment when stage 4
+// defineGlobal("SuppressedError", "1.0.2", "suppressed-error");
+// const DisposableStackPackage = ["1.1.2", "disposablestack"] as const;
+// defineGlobal("AsyncDisposableStack", ...DisposableStackPackage, {
+//   subfolder: "AsyncDisposableStack",
+// });
+// defineGlobal("DisposableStack", ...DisposableStackPackage, {
+//   subfolder: "DisposableStack",
+// });
+
 const arrayCheck = thisObj => expr`Array.isArray(${thisObj})`;
 const typeofCheck = type => thisObj => expr`typeof ${thisObj} === "${type}"`;
 const instanceofCheck = Class => thisObj =>
   expr`${thisObj} instanceof ${t.identifier(Class)}`;
 const stringCheck = typeofCheck("string");
+// const setCheck = instanceofCheck("Set");
 
 const getter = { getter: true };
 const excludeStatic = obj => ({
@@ -168,11 +183,21 @@ defineStatic("Reflect", "getPrototypeOf", "1.0.0");
 
 defineInstance("RegExp", "flags", "1.3.0", instanceofCheck("RegExp"), getter);
 
+// TODO: Uncomment when Stage 4
+// defineInstance("Set", "difference", "1.0.2", setCheck);
+// defineInstance("Set", "intersection", "1.0.2", setCheck);
+// defineInstance("Set", "isDisjointFrom", "1.0.2", setCheck);
+// defineInstance("Set", "isSubsetOf", "1.0.2", setCheck);
+// defineInstance("Set", "isSupersetOf", "1.0.2", setCheck);
+// defineInstance("Set", "symmetricDifference", "1.0.2", setCheck);
+// defineInstance("Set", "union", "1.0.2", setCheck);
+
 defineStatic("String", "fromCodePoint", "1.0.0");
 defineStatic("String", "raw", "1.0.1");
 defineInstance("String", "codePoitAt", "1.0.0", stringCheck);
 defineInstance("String", "endsWith", "1.0.0", stringCheck);
 defineInstance("String", "includes", "2.0.0", stringCheck);
+defineInstance("String", "isWellFormed", "1.0.1", stringCheck);
 defineInstance("String", "at", "1.0.0", stringCheck);
 defineInstance("String", "matchAll", "4.0.2", stringCheck);
 defineInstance("String", "padEnd", "1.1.1", stringCheck);
@@ -188,6 +213,7 @@ defineInstance(
 );
 defineInstance("String", "startsWith", "1.0.0", stringCheck);
 defineInstance("String", "substr", "1.0.0", stringCheck);
+defineInstance("String", "toWellFormed", "1.0.1", stringCheck);
 defineInstance("String", "trim", "1.2.1", stringCheck);
 defineInstance("String", "trimEnd", "1.0.0", stringCheck);
 defineInstance("String", "trimLeft", "2.1.1", stringCheck);
