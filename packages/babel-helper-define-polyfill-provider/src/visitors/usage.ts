@@ -1,40 +1,82 @@
 import type { NodePath } from "@babel/traverse";
 import { types as t } from "@babel/core";
-import type { MetaDescriptor } from "../types";
+import type { CallProvider } from "./index";
 
 import { resolveKey, resolveSource } from "../utils";
 
-export default (
-  callProvider: (payload: MetaDescriptor, path: NodePath) => void,
-) => {
+function isRemoved(path: NodePath) {
+  if (path.removed) return true;
+  if (!path.parentPath) return false;
+  if (path.listKey) {
+    if (!path.parentPath.node?.[path.listKey]?.includes(path.node)) return true;
+  } else {
+    if (path.parentPath.node[path.key] !== path.node) return true;
+  }
+  return isRemoved(path.parentPath);
+}
+
+export default (callProvider: CallProvider) => {
   function property(object, key, placement, path) {
     return callProvider({ kind: "property", object, key, placement }, path);
+  }
+
+  function handleReferencedIdentifier(path) {
+    const {
+      node: { name },
+      scope,
+    } = path;
+    if (scope.getBindingIdentifier(name)) return;
+
+    callProvider({ kind: "global", name }, path);
+  }
+
+  function analyzeMemberExpression(
+    path: NodePath<t.MemberExpression | t.OptionalMemberExpression>,
+  ) {
+    const key = resolveKey(path.get("property"), path.node.computed);
+    return { key, handleAsMemberExpression: !!key && key !== "prototype" };
   }
 
   return {
     // Symbol(), new Promise
     ReferencedIdentifier(path: NodePath<t.Identifier>) {
-      const {
-        node: { name },
-        scope,
-      } = path;
-      if (scope.getBindingIdentifier(name)) return;
-
-      callProvider({ kind: "global", name }, path);
+      const { parentPath } = path;
+      if (
+        parentPath.isMemberExpression({ object: path.node }) &&
+        analyzeMemberExpression(parentPath).handleAsMemberExpression
+      ) {
+        return;
+      }
+      handleReferencedIdentifier(path);
     },
 
-    MemberExpression(path: NodePath<t.MemberExpression>) {
-      const key = resolveKey(path.get("property"), path.node.computed);
-      if (!key || key === "prototype") return;
+    "MemberExpression|OptionalMemberExpression"(
+      path: NodePath<t.MemberExpression | t.OptionalMemberExpression>,
+    ) {
+      const { key, handleAsMemberExpression } = analyzeMemberExpression(path);
+      if (!handleAsMemberExpression) return;
 
       const object = path.get("object");
-      if (object.isIdentifier()) {
-        const binding = object.scope.getBinding(object.node.name);
-        if (binding && binding.path.isImportNamespaceSpecifier()) return;
+      let objectIsGlobalIdentifier = object.isIdentifier();
+      if (objectIsGlobalIdentifier) {
+        const binding = object.scope.getBinding(
+          (object.node as t.Identifier).name,
+        );
+        if (binding) {
+          if (binding.path.isImportNamespaceSpecifier()) return;
+          objectIsGlobalIdentifier = false;
+        }
       }
 
       const source = resolveSource(object);
-      return property(source.id, key, source.placement, path);
+      let skipObject = property(source.id, key, source.placement, path);
+      skipObject ||=
+        !objectIsGlobalIdentifier ||
+        path.shouldSkip ||
+        object.shouldSkip ||
+        isRemoved(object);
+
+      if (!skipObject) handleReferencedIdentifier(object);
     },
 
     ObjectPattern(path: NodePath<t.ObjectPattern>) {

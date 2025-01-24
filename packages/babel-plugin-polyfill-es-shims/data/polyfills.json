@@ -139,16 +139,22 @@
     "chrome": "97",
     "opera": "83",
     "edge": "97",
-    "safari": "tp",
+    "firefox": "104",
+    "safari": "15.4",
     "node": "18",
+    "ios": "15.4",
+    "samsung": "18",
     "electron": "17"
   },
   "Array.prototype.findLastIndex": {
     "chrome": "97",
     "opera": "83",
     "edge": "97",
-    "safari": "tp",
+    "firefox": "104",
+    "safari": "15.4",
     "node": "18",
+    "ios": "15.4",
+    "samsung": "18",
     "electron": "17"
   },
   "Array.prototype.flat": {
@@ -318,6 +324,13 @@
     "samsung": "9",
     "electron": "3"
   },
+  "ArrayBuffer.prototype.transfer": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "firefox": "122",
+    "electron": "31"
+  },
   "Date.prototype.toISOString": {
     "chrome": "5",
     "opera": "10.50",
@@ -367,6 +380,7 @@
     "safari": "15",
     "node": "16.11",
     "ios": "15",
+    "samsung": "17",
     "electron": "15"
   },
   "Function.prototype.name": {
@@ -381,6 +395,95 @@
     "phantom": "1.9",
     "samsung": "1",
     "electron": "0.20"
+  },
+  "Iterator": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.from": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.drop": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.every": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.filter": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.find": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.flatMap": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.forEach": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.map": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.reduce": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.some": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.take": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Iterator.prototype.toArray": {
+    "chrome": "126",
+    "opera": "112",
+    "edge": "126",
+    "electron": "31"
+  },
+  "Map": {
+    "chrome": "51",
+    "opera": "38",
+    "edge": "15",
+    "firefox": "53",
+    "safari": "10",
+    "node": "6.5",
+    "ios": "10",
+    "samsung": "5",
+    "electron": "1.2"
   },
   "Math.acosh": {
     "chrome": "38",
@@ -652,8 +755,10 @@
     "opera": "79",
     "edge": "93",
     "firefox": "92",
-    "safari": "tp",
+    "safari": "15.4",
     "node": "16.9",
+    "ios": "15.4",
+    "samsung": "17",
     "electron": "14"
   },
   "Object.values": {
@@ -744,6 +849,87 @@
     "ios": "9",
     "samsung": "5",
     "electron": "0.37"
+  },
+  "Set": {
+    "chrome": "51",
+    "opera": "38",
+    "edge": "15",
+    "firefox": "53",
+    "safari": "10",
+    "node": "6.5",
+    "ios": "10",
+    "samsung": "5",
+    "electron": "1.2"
+  },
+  "Set.prototype.difference": {
+    "chrome": "122",
+    "opera": "108",
+    "edge": "122",
+    "firefox": "127",
+    "safari": "17",
+    "node": "22",
+    "ios": "17",
+    "electron": "29"
+  },
+  "Set.prototype.intersection": {
+    "chrome": "122",
+    "opera": "108",
+    "edge": "122",
+    "firefox": "127",
+    "safari": "17",
+    "node": "22",
+    "ios": "17",
+    "electron": "29"
+  },
+  "Set.prototype.isDisjointFrom": {
+    "chrome": "122",
+    "opera": "108",
+    "edge": "122",
+    "firefox": "127",
+    "safari": "17",
+    "node": "22",
+    "ios": "17",
+    "electron": "29"
+  },
+  "Set.prototype.isSubsetOf": {
+    "chrome": "122",
+    "opera": "108",
+    "edge": "122",
+    "firefox": "127",
+    "safari": "17",
+    "node": "22",
+    "ios": "17",
+    "electron": "29"
+  },
+  "Set.prototype.isSupersetOf": {
+    "chrome": "122",
+    "opera": "108",
+    "edge": "122",
+    "firefox": "127",
+    "safari": "17",
+    "node": "22",
+    "ios": "17",
+    "electron": "29"
+  },
+  "Set.prototype.symmetricDifference": {
+    "chrome": "122",
+    "opera": "108",
+    "edge": "122",
+    "firefox": "127",
+    "safari": "17",
+    "node": "22",
+    "ios": "17",
+    "electron": "29"
+  },
+  "Set.prototype.union": {
+    "chrome": "122",
+    "opera": "108",
+    "edge": "122",
+    "firefox": "127",
+    "safari": "17",
+    "node": "22",
+    "ios": "17",
+    "electron": "29"
   },
   "String.fromCodePoint": {
     "chrome": "41",
@@ -1137,5 +1323,16 @@
   "Array.prototype.toReversed": {},
   "Array.prototype.toSorted": {},
   "Array.prototype.toSpliced": {},
-  "Array.prototype.with": {}
+  "Array.prototype.with": {},
+  "ArrayBuffer.prototype.detached": {},
+  "ArrayBuffer.prototype.transferToFixedLength": {},
+  "AsyncDisposableStack": {},
+  "DisposableStack": {},
+  "Iterator.prototype.constructor": {},
+  "Promise.withResolvers": {},
+  "String.prototype.isWellFormed": {},
+  "String.prototype.toWellFormed": {},
+  "SuppressedError": {},
+  "Symbol.asyncDispose": {},
+  "Symbol.dispose": {}
 }

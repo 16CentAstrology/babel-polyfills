@@ -4,37 +4,52 @@ import getModulesListForTargetVersion from "../core-js-compat/get-modules-list-f
 import {
   BuiltIns,
   CommonIterators,
-  CommonInstanceDependencies,
   PromiseDependencies,
   PromiseDependenciesWithIterators,
   StaticProperties,
   InstanceProperties,
+  DecoratorMetadataDependencies,
   type CoreJSPolyfillDescriptor,
 } from "./built-in-definitions";
+import * as BabelRuntimePaths from "./babel-runtime-corejs3-paths";
 import canSkipPolyfill from "./usage-filters";
 
 import type { NodePath } from "@babel/traverse";
-import { types as t } from "@babel/core";
+import { types as t, template } from "@babel/core";
 import {
   callMethod,
   coreJSModule,
   isCoreJSSource,
   coreJSPureHelper,
+  BABEL_RUNTIME,
+  extractOptionalCheck,
+  maybeMemoizeContext,
 } from "./utils";
 
 import defineProvider from "@babel/helper-define-polyfill-provider";
 
+const presetEnvCompat = "#__secret_key__@babel/preset-env__compatibility";
 const runtimeCompat = "#__secret_key__@babel/runtime__compatibility";
 
 type Options = {
   version?: number | string;
   proposals?: boolean;
   shippedProposals?: boolean;
-  "#__secret_key__@babel/runtime__compatibility": void | {
-    useBabelRuntime: string;
+  [presetEnvCompat]?: { noRuntimeName: boolean };
+  [runtimeCompat]: {
+    useBabelRuntime: boolean;
     ext: string;
   };
 };
+
+const uniqueObjects = [
+  "array",
+  "string",
+
+  "iterator",
+  "async-iterator",
+  "dom-collections",
+].map(v => new RegExp(`[a-z]*\\.${v}\\..*`));
 
 const esnextFallback = (
   name: string,
@@ -53,7 +68,8 @@ export default defineProvider<Options>(function (
     version = 3,
     proposals,
     shippedProposals,
-    [runtimeCompat]: { useBabelRuntime, ext = ".js" } = { useBabelRuntime: "" },
+    [presetEnvCompat]: { noRuntimeName = false } = {},
+    [runtimeCompat]: { useBabelRuntime = false, ext = ".js" } = {},
   },
 ) {
   const isWebpack = babel.caller(caller => caller?.name === "babel-loader");
@@ -69,17 +85,17 @@ export default defineProvider<Options>(function (
   function getCoreJSPureBase(useProposalBase) {
     return useBabelRuntime
       ? useProposalBase
-        ? `${useBabelRuntime}/core-js`
-        : `${useBabelRuntime}/core-js-stable`
+        ? `${BABEL_RUNTIME}/core-js`
+        : `${BABEL_RUNTIME}/core-js-stable`
       : useProposalBase
-      ? "core-js-pure/features"
-      : "core-js-pure/stable";
+        ? "core-js-pure/features"
+        : "core-js-pure/stable";
   }
 
   function maybeInjectGlobalImpl(name: string, utils) {
     if (shouldInjectPolyfill(name)) {
       debug(name);
-      utils.injectGlobalImport(coreJSModule(name));
+      utils.injectGlobalImport(coreJSModule(name), name);
       return true;
     }
     return false;
@@ -97,9 +113,9 @@ export default defineProvider<Options>(function (
 
   function maybeInjectPure(
     desc: CoreJSPolyfillDescriptor,
-    hint,
-    utils,
-    object?,
+    hint: string,
+    utils: ReturnType<typeof getUtils>,
+    object?: string,
   ) {
     if (
       desc.pure &&
@@ -112,6 +128,16 @@ export default defineProvider<Options>(function (
         useProposalBase = true;
       } else if (name.startsWith("es.") && !available.has(name)) {
         useProposalBase = true;
+      }
+      if (
+        useBabelRuntime &&
+        !(
+          useProposalBase
+            ? BabelRuntimePaths.proposals
+            : BabelRuntimePaths.stable
+        ).has(desc.pure)
+      ) {
+        return;
       }
       const coreJSPureBase = getCoreJSPureBase(useProposalBase);
       return utils.injectDefaultImport(
@@ -133,6 +159,8 @@ export default defineProvider<Options>(function (
 
   return {
     name: "corejs3",
+
+    runtimeName: noRuntimeName ? null : BABEL_RUNTIME,
 
     polyfills: corejs3Polyfills,
 
@@ -191,12 +219,14 @@ export default defineProvider<Options>(function (
         meta.placement === "prototype"
       ) {
         const low = meta.object.toLowerCase();
-        deps = deps.filter(
-          m => m.includes(low) || CommonInstanceDependencies.has(m),
+        deps = deps.filter(m =>
+          uniqueObjects.some(v => v.test(m)) ? m.includes(low) : true,
         );
       }
 
       maybeInjectGlobal(deps, utils);
+
+      return true;
     },
 
     usagePure(meta, utils, path) {
@@ -219,7 +249,9 @@ export default defineProvider<Options>(function (
 
       if (meta.kind === "property") {
         // We can't compile destructuring and updateExpression.
-        if (!path.isMemberExpression()) return;
+        if (!path.isMemberExpression() && !path.isOptionalMemberExpression()) {
+          return;
+        }
         if (!path.isReferenced()) return;
         if (path.parentPath.isUpdateExpression()) return;
         if (t.isSuper(path.node.object)) {
@@ -298,7 +330,31 @@ export default defineProvider<Options>(function (
           // @ts-expect-error
           meta.object,
         );
-        if (id) path.replaceWith(id);
+        if (id) {
+          path.replaceWith(id);
+          let { parentPath } = path;
+          if (
+            parentPath.isOptionalMemberExpression() ||
+            parentPath.isOptionalCallExpression()
+          ) {
+            do {
+              const parentAsNotOptional = parentPath as NodePath as NodePath<
+                t.MemberExpression | t.CallExpression
+              >;
+              parentAsNotOptional.type = parentAsNotOptional.node.type =
+                parentPath.type === "OptionalMemberExpression"
+                  ? "MemberExpression"
+                  : "CallExpression";
+              delete parentAsNotOptional.node.optional;
+
+              ({ parentPath } = parentPath);
+            } while (
+              (parentPath.isOptionalMemberExpression() ||
+                parentPath.isOptionalCallExpression()) &&
+              !parentPath.node.optional
+            );
+          }
+        }
       } else if (resolved.kind === "instance") {
         const id = maybeInjectPure(
           resolved.desc,
@@ -309,9 +365,40 @@ export default defineProvider<Options>(function (
         );
         if (!id) return;
 
-        const { node } = path as NodePath<t.MemberExpression>;
-        if (t.isCallExpression(path.parent, { callee: node })) {
-          callMethod(path, id);
+        const { node, parent } = path as NodePath<
+          t.MemberExpression | t.OptionalMemberExpression
+        >;
+
+        if (t.isOptionalCallExpression(parent) && parent.callee === node) {
+          const wasOptional = parent.optional;
+          parent.optional = !wasOptional;
+
+          if (!wasOptional) {
+            const check = extractOptionalCheck(
+              path.scope,
+              node as t.OptionalMemberExpression,
+            );
+            const [thisArg, thisArg2] = maybeMemoizeContext(node, path.scope);
+
+            path.replaceWith(
+              check(
+                template.expression.ast`
+                  Function.call.bind(${id}(${thisArg}), ${thisArg2})
+                `,
+              ),
+            );
+          } else if (t.isOptionalMemberExpression(node)) {
+            const check = extractOptionalCheck(path.scope, node);
+            callMethod(path, id, true, check);
+          } else {
+            callMethod(path, id, true);
+          }
+        } else if (t.isCallExpression(parent) && parent.callee === node) {
+          callMethod(path, id, false);
+        } else if (t.isOptionalMemberExpression(node)) {
+          const check = extractOptionalCheck(path.scope, node);
+          path.replaceWith(check(t.callExpression(id, [node.object])));
+          if (t.isOptionalMemberExpression(parent)) parent.optional = true;
         } else {
           path.replaceWith(t.callExpression(id, [node.object]));
         }
@@ -358,6 +445,18 @@ export default defineProvider<Options>(function (
       YieldExpression(path: NodePath<t.YieldExpression>) {
         if (path.node.delegate) {
           maybeInjectGlobal(CommonIterators, getUtils(path));
+        }
+      },
+
+      // Decorators metadata
+      Class(path: NodePath<t.Class>) {
+        const hasDecorators =
+          path.node.decorators?.length ||
+          path.node.body.body.some(
+            el => (el as t.ClassMethod).decorators?.length,
+          );
+        if (hasDecorators) {
+          maybeInjectGlobal(DecoratorMetadataDependencies, getUtils(path));
         }
       },
     },
